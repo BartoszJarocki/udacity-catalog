@@ -1,0 +1,64 @@
+@import url('https://fonts.googleapis.com/css?family=Montserrat|Open+Sans');
+body {
+    font-family: 'Open Sans', sans-serif;
+    background-color: white;
+    display: flex;
+    min-height: 100vh;
+    flex-direction: column;
+}
+
+.main {
+    flex: 1 0 auto;
+}
+
+h1,
+h2,
+h3,
+h4 {
+    font-family: 'Montserrat', sans-serif;
+    color: black;
+}
+
+.name {
+    width: 50%;
+    display: inline-block;
+    float: left;
+}
+
+.price {
+    text-align: right;
+    width: 50%;
+    float: right;
+}
+
+.flash {
+    background: #cee5F5;
+}
+
+.brand-name {
+    margin: 10px 10px 10px 10px;
+    font-size: 1.6em;
+}
+
+#catalog-content {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+.catalog-item {
+    flex-basis: 320px;
+    flex-grow: 1;
+    margin: 1rem;
+}
+
+.login-item {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+    background: #fff;
+    border-radius: 2px;
+    padding: 50px;
+}
+
+.center {
+    margin: auto
+}

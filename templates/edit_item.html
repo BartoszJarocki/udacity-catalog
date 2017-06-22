@@ -1,0 +1,15 @@
+{% extends "base.html" %} 
+{% block main %}
+
+<h3>Edit item</h3>
+
+<form action="{{url_for('edit_item', category_id = category_id, item_id = item.id)}}" method='POST'>
+
+    <p>Name:</p>
+    <input type='text' size='30' name='title' placeholder='{{item.title}}'>
+    <input type='text' size='30' name='description' placeholder='{{item.description}}'>
+
+    <button class="waves-light btn-large light-blue darken-4" type='submit'>Edit</button>
+</form>
+
+{% endblock %}

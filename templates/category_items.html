@@ -1,0 +1,23 @@
+{% extends "base.html" %} 
+
+{% block navbar %}
+{% if logged_in %}
+<li><a href="{{url_for('edit_category', category_id = category.id)}}">Edit category</a></li>
+<li><a href="{{url_for('delete_category', category_id = category.id)}}">Delete category</a></li>
+<li><a href="{{url_for('new_item', category_id = category.id)}}">Add item</a></li>
+{% endif %} 
+{% endblock %} 
+
+{% block main %}
+
+<ul class="collection with-header">
+    <li class="collection-header">
+        <h4>{{category.title}}</h4>
+    </li>
+
+    {% for item in items %}
+    <li class="collection-item"> <a href="{{url_for('item_details', category_id = item.category_id, item_id = item.id)}}">{{item.title}}</a></li>
+    {% endfor %}
+</ul>
+
+{% endblock %}

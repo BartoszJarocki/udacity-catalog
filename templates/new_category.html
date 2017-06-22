@@ -1,0 +1,11 @@
+{% extends "base.html" %} 
+{% block main %}
+
+<h3>Create new category</h3>
+
+<form action="{{url_for('new_category')}}" method='POST'>
+    <input placeholder="Name" type='text' size='30' name='title'>
+    <button class="waves-light btn-large light-blue darken-4" type='submit'>Create category</button>
+</form>
+
+{% endblock %}

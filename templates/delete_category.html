@@ -1,0 +1,9 @@
+{% extends "base.html" %} {% block main %}
+
+<h3> Are you sure you want to delete {{category.title}}? </h3>
+
+<form action="#" method='post'>
+    <button class="waves-light btn-large light-blue darken-4" type='submit'>Delete category</button>
+</form>
+
+{% endblock %}

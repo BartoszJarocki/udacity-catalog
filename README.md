@@ -12,13 +12,14 @@ Project uses some external libraries like:
 3. jinja2 templates
 
 ## Installing dependencies
-1. Install virtualenv run ```pip install virtualenv```.
-2. Install all needed dependencies run ```pip install -r requirements.txt```
-3. Activate virtualenv run ```source ./bin/activate```
+1. To install virtualenv run ```pip install virtualenv```.
+2. To create virtualenv run ```virtualenv .```
+3. To activate virtualenv run ```source ./bin/activate```
+4. To install all needed dependencies run ```pip install -r requirements.txt```
 
 ## Running locally
 1. Run `python populate_catalog.py` to create database and populate dummy data.
-3. Run `python server.py` and check http://localhost:5000
+3. Run `python project.py` and check http://localhost:5000
 
 ## API
 1. `/api/categories/`- Returns categories json.

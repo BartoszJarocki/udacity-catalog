@@ -163,7 +163,16 @@ def catalog():
     return render_template(
         'main.html',
         categories=categories,
-        recent_items=latest_items,)
+        recent_items=latest_items)
+
+
+@app.route('/api/categories/')
+def api_categories():
+    """
+    Return the list of categories as JSON.
+    """
+    categories = session.query(Category).all()
+    return jsonify(categories=[category.serialize for category in categories])
 
 
 @app.route('/categories/new', methods=['GET', 'POST'])
@@ -223,7 +232,7 @@ def delete_category(category_id):
 
     if not category_to_delete.user_id == user_id:
         return redirect(url_for('catalog'))
-    
+
     if request.method == 'POST':
         session.delete(category_to_delete)
         session.commit()
@@ -238,7 +247,7 @@ def delete_category(category_id):
 @app.route('/categories/<int:category_id>')
 def category_items(category_id):
     """
-    Renders the items from given category.
+    Renders the items from given category as JSON.
     """
     category = session.query(
         Category).filter_by(id=category_id).one()
@@ -251,6 +260,15 @@ def category_items(category_id):
         is_owner=is_owner)
 
 
+@app.route('/api/categories/<int:category_id>')
+def api_category_items(category_id):
+    """
+    Return the list of items in given category
+    """
+    items = session.query(Item).filter_by(category_id=category_id).all()
+    return jsonify(items=[item.serialize for item in items])
+
+
 @app.route('/categories/<int:category_id>/items/<int:item_id>')
 def item_details(category_id, item_id):
     """
@@ -261,6 +279,18 @@ def item_details(category_id, item_id):
     is_owner = item.user_id == login_session['user_id']
     return render_template(
         'item_details.html', category=category, item=item, is_owner=is_owner)
+
+
+@app.route('/api/items/<int:item_id>')
+def api_item_details(item_id):
+    """
+    Return the details of item with given id as JSON
+    """
+    try:
+        item = session.query(Item).filter_by(id=item_id).one()
+        return jsonify(item.serialize)
+    except BaseException:
+        return make_response(json.dumps('Invalid item id!'), 404)
 
 
 @app.route('/categories/<int:category_id>/new', methods=['GET', 'POST'])
@@ -340,36 +370,6 @@ def delete_item(category_id, item_id):
             'delete_item.html',
             category_id=category_id,
             item=item_to_delete)
-
-
-@app.route('/api/categories/')
-def api_categories():
-    """
-    Return the list of categories
-    """
-    categories = session.query(Category).all()
-    return jsonify(categories=[category.serialize for category in categories])
-
-
-@app.route('/api/categories/<int:category_id>')
-def api_category_items(category_id):
-    """
-    Return the list of items in given category
-    """
-    items = session.query(Item).filter_by(category_id=category_id).all()
-    return jsonify(items=[item.serialize for item in items])
-
-
-@app.route('/api/items/<int:item_id>')
-def api_item_details(item_id):
-    """
-    Return the details of item with given id
-    """
-    try:
-        item = session.query(Item).filter_by(id=item_id).one()
-        return jsonify(item.serialize)
-    except BaseException:
-        return make_response(json.dumps('Invalid item id!'), 404)
 
 
 # Helper methods for creating/getting user info

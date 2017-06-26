@@ -1,7 +1,10 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from database_setup import Base, User, Category, Item
+from database_setup import Base, init_db
+from models import User, Category, Item
+
+init_db()
 
 engine = create_engine('sqlite:///catalog.db')
 

@@ -1,10 +1,11 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify, flash, make_response, session as login_session
+from flask import Flask, render_template as flask_render, request, redirect, url_for, jsonify, flash, make_response, session as login_session
 from flask_cors import CORS
 import random
 import string
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from database_setup import Base, Category, Item, User
+from models import Category, Item, User
+from database_setup import Base
 from oauth2client import client, crypt
 from apiclient import discovery
 import httplib2
@@ -23,6 +24,11 @@ session = DBSession()
 
 CLIENT_ID = json.loads(
     open('client_secret.json', 'r').read())['web']['client_id']
+
+
+def render_template(template_name, **params):
+    params['logged_in'] = 'username' in login_session
+    return flask_render(template_name, **params)
 
 
 def login_required(f):
@@ -151,15 +157,13 @@ def catalog():
     """
     Shows the main page with categories and 10 latest items added.
     """
-    logged_in = 'username' in login_session
     latest_items = session.query(Item).order_by(
         'created_at desc').limit(12).all()
     categories = session.query(Category).all()
     return render_template(
         'main.html',
         categories=categories,
-        recent_items=latest_items,
-        logged_in=logged_in)
+        recent_items=latest_items,)
 
 
 @app.route('/categories/new', methods=['GET', 'POST'])
@@ -169,8 +173,6 @@ def new_category():
     Renders the form to create a new category and save it in database if all the
     information was entered correctly.
     """
-
-    logged_in = 'username' in login_session
     if request.method == 'POST':
         new_category = Category(
             title=request.form['title'], user_id=login_session['user_id'])
@@ -179,7 +181,7 @@ def new_category():
         session.commit()
         return redirect(url_for('catalog'))
     else:
-        return render_template('new_category.html', logged_in=logged_in)
+        return render_template('new_category.html')
 
 
 @app.route('/categories/<int:category_id>/edit', methods=['GET', 'POST'])
@@ -189,9 +191,13 @@ def edit_category(category_id):
     Renders the form to edit a specific category and save it in database if all
     the information was entered correctly.
     """
-    logged_in = 'username' in login_session
+    user_id = login_session['user_id']
     edited_category = session.query(
         Category).filter_by(id=category_id).one()
+
+    if not edited_category.user_id == user_id:
+        return redirect(url_for('catalog'))
+
     if request.method == 'POST':
         if request.form['title']:
             edited_category.title = request.form['title']
@@ -202,8 +208,7 @@ def edit_category(category_id):
     else:
         return render_template(
             'edit_category.html',
-            category=edited_category,
-            logged_in=logged_in)
+            category=edited_category)
 
 
 @app.route('/categories/<int:category_id>/delete', methods=['GET', 'POST'])
@@ -212,9 +217,13 @@ def delete_category(category_id):
     """
     Renders the form to delete a specific category and delete it from database.
     """
-    logged_in = 'username' in login_session
+    user_id = login_session['user_id']
     category_to_delete = session.query(
         Category).filter_by(id=category_id).one()
+
+    if not category_to_delete.user_id == user_id:
+        return redirect(url_for('catalog'))
+    
     if request.method == 'POST':
         session.delete(category_to_delete)
         session.commit()
@@ -223,8 +232,7 @@ def delete_category(category_id):
     else:
         return render_template(
             'delete_category.html',
-            category=category_to_delete,
-            logged_in=logged_in)
+            category=category_to_delete)
 
 
 @app.route('/categories/<int:category_id>')
@@ -232,15 +240,15 @@ def category_items(category_id):
     """
     Renders the items from given category.
     """
-    logged_in = 'username' in login_session
     category = session.query(
         Category).filter_by(id=category_id).one()
     items = session.query(Item).filter_by(category_id=category_id)
+    is_owner = category.user_id == login_session['user_id']
     return render_template(
         'category_items.html',
         category=category,
         items=items,
-        logged_in=logged_in)
+        is_owner=is_owner)
 
 
 @app.route('/categories/<int:category_id>/items/<int:item_id>')
@@ -248,11 +256,11 @@ def item_details(category_id, item_id):
     """
     Renders the item with given item_id.
     """
-    logged_in = 'username' in login_session
     category = session.query(Category).filter_by(id=category_id).one()
     item = session.query(Item).filter_by(id=item_id).one()
+    is_owner = item.user_id == login_session['user_id']
     return render_template(
-        'item_details.html', category=category, item=item, logged_in=logged_in)
+        'item_details.html', category=category, item=item, is_owner=is_owner)
 
 
 @app.route('/categories/<int:category_id>/new', methods=['GET', 'POST'])
@@ -262,13 +270,13 @@ def new_item(category_id):
     Renders the form to create a new item for a category and save it in
     database if all the information was entered correctly.
     """
-    logged_in = 'username' in login_session
     category = session.query(Category).filter_by(id=category_id).one()
+    user_id = login_session['user_id']
     if request.method == 'POST':
         new_item = Item(title=request.form['title'],
                         description=request.form['description'],
                         category_id=category_id,
-                        user_id=category.user_id)
+                        user_id=user_id)
         session.add(new_item)
         session.commit()
         flash("Item has been created!")
@@ -276,8 +284,7 @@ def new_item(category_id):
     else:
         return render_template(
             'new_item.html',
-            category_id=category_id,
-            logged_in=logged_in)
+            category_id=category_id)
 
 
 @app.route('/categories/<int:category_id>/<int:item_id>/edit',
@@ -288,8 +295,12 @@ def edit_item(category_id, item_id):
     Renders the form to edit a specific item and save it in database if all
     the information was entered correctly.
     """
-    logged_in = 'username' in login_session
+    user_id = login_session['user_id']
     edited_item = session.query(Item).filter_by(id=item_id).one()
+
+    if not edited_item.user_id == user_id:
+        return redirect(url_for('catalog'))
+
     if request.method == 'POST':
         if request.form['title']:
             edited_item.title = request.form['title']
@@ -303,8 +314,7 @@ def edit_item(category_id, item_id):
         return render_template(
             'edit_item.html',
             category_id=category_id,
-            item=edited_item,
-            logged_in=logged_in)
+            item=edited_item)
 
 
 @app.route('/categories/<int:category_id>/<int:item_id>/delete',
@@ -314,8 +324,12 @@ def delete_item(category_id, item_id):
     """
     Renders the form to delete a specific item and delete it from database.
     """
-    logged_in = 'username' in login_session
+    user_id = login_session['user_id']
     item_to_delete = session.query(Item).filter_by(id=item_id).one()
+
+    if not item_to_delete.user_id == user_id:
+        return redirect(url_for('catalog'))
+
     if request.method == 'POST':
         session.delete(item_to_delete)
         session.commit()
@@ -325,8 +339,7 @@ def delete_item(category_id, item_id):
         return render_template(
             'delete_item.html',
             category_id=category_id,
-            item=item_to_delete,
-            logged_in=logged_in)
+            item=item_to_delete)
 
 
 @app.route('/api/categories/')
@@ -335,7 +348,6 @@ def api_categories():
     Return the list of categories
     """
     categories = session.query(Category).all()
-
     return jsonify(categories=[category.serialize for category in categories])
 
 
@@ -345,7 +357,6 @@ def api_category_items(category_id):
     Return the list of items in given category
     """
     items = session.query(Item).filter_by(category_id=category_id).all()
-
     return jsonify(items=[item.serialize for item in items])
 
 

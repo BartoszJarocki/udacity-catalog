@@ -2,8 +2,10 @@
 
 {% block navbar %}
 {% if logged_in %}
-<li><a href="{{url_for('edit_category', category_id = category.id)}}">Edit category</a></li>
-<li><a href="{{url_for('delete_category', category_id = category.id)}}">Delete category</a></li>
+    {% if is_owner %}
+    <li><a href="{{url_for('edit_category', category_id = category.id)}}">Edit category</a></li>
+    <li><a href="{{url_for('delete_category', category_id = category.id)}}">Delete category</a></li>
+    {% endif %} 
 <li><a href="{{url_for('new_item', category_id = category.id)}}">Add item</a></li>
 {% endif %} 
 {% endblock %} 

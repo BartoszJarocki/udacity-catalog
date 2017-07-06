@@ -252,7 +252,7 @@ def category_items(category_id):
     category = session.query(
         Category).filter_by(id=category_id).one()
     items = session.query(Item).filter_by(category_id=category_id)
-    is_owner = category.user_id == login_session['user_id']
+    is_owner = category.user_id == get_session_user_id()
     return render_template(
         'category_items.html',
         category=category,
@@ -268,7 +268,6 @@ def api_category_items(category_id):
     items = session.query(Item).filter_by(category_id=category_id).all()
     return jsonify(items=[item.serialize for item in items])
 
-
 @app.route('/categories/<int:category_id>/items/<int:item_id>')
 def item_details(category_id, item_id):
     """
@@ -276,7 +275,7 @@ def item_details(category_id, item_id):
     """
     category = session.query(Category).filter_by(id=category_id).one()
     item = session.query(Item).filter_by(id=item_id).one()
-    is_owner = item.user_id == login_session['user_id']
+    is_owner = item.user_id == get_session_user_id()
     return render_template(
         'item_details.html', category=category, item=item, is_owner=is_owner)
 
@@ -393,6 +392,13 @@ def get_user_id(email):
         return user.id
     except BaseException:
         return None
+
+
+def get_session_user_id(): 
+    try:
+         return login_session['user_id']
+    except Exception:
+         return -1
 
 
 if __name__ == '__main__':
